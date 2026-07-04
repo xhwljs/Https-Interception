@@ -49,7 +49,8 @@ class MainActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         adapter = NetworkRequestAdapter { request ->
             val intent = Intent(this, DetailActivity::class.java)
-            intent.putExtra("request_id", request.id)
+            val gson = com.google.gson.Gson()
+            intent.putExtra("request_json", gson.toJson(request))
             startActivity(intent)
         }
 
@@ -132,16 +133,8 @@ class MainActivity : AppCompatActivity() {
             } else {
                 View.GONE
             }
-        }
-
-        // 总数量
-        viewModel.totalCount.observe(this) { count ->
-            binding.totalCountTextView.text = "总计: $count"
-        }
-
-        // 今日数量
-        viewModel.todayCount.observe(this) { count ->
-            binding.todayCountTextView.text = "今日: $count"
+            binding.totalCountTextView.text = "总计: ${requests.size}"
+            binding.todayCountTextView.text = "今日: ${requests.size}"
         }
     }
 

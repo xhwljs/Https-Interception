@@ -12,7 +12,6 @@ import androidx.lifecycle.lifecycleScope
 import com.google.gson.GsonBuilder
 import com.networkcapture.module.databinding.ActivityDetailBinding
 import com.networkcapture.module.data.model.NetworkRequest
-import com.networkcapture.module.data.repository.NetworkRequestRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,40 +33,25 @@ class DetailActivity : AppCompatActivity() {
         binding = ActivityDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 获取请求 ID
-        val requestId = intent.getLongExtra("request_id", -1L)
-        if (requestId == -1L) {
-            Toast.makeText(this, "无效的请求 ID", Toast.LENGTH_SHORT).show()
+        // 从Intent获取JSON数据
+        val json = intent.getStringExtra("request_json")
+        if (json.isNullOrEmpty()) {
+            Toast.makeText(this, "无效的请求数据", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
-        // 加载请求详情
-        loadRequestDetail(requestId)
-    }
-
-    /**
-     * 加载请求详情
-     */
-    private fun loadRequestDetail(requestId: Long) {
-        lifecycleScope.launch {
-            try {
-                val repository = NetworkRequestRepository.getRepository(this@DetailActivity)
-                request = withContext(Dispatchers.IO) {
-                    repository.getById(requestId)
-                }
-
-                if (request == null) {
-                    Toast.makeText(this@DetailActivity, "请求不存在", Toast.LENGTH_SHORT).show()
-                    finish()
-                    return@launch
-                }
-
+        try {
+            request = gson.fromJson(json, NetworkRequest::class.java)
+            if (request != null) {
                 displayRequest(request!!)
-            } catch (e: Exception) {
-                Toast.makeText(this@DetailActivity, "加载失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "解析数据失败", Toast.LENGTH_SHORT).show()
                 finish()
             }
+        } catch (e: Exception) {
+            Toast.makeText(this, "加载失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            finish()
         }
     }
 

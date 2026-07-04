@@ -1,104 +1,134 @@
 package com.networkcapture.module.hook
 
 import android.content.Context
-import android.content.Intent
+import android.util.Log
+import com.google.gson.Gson
 import com.networkcapture.module.data.model.NetworkRequest
-import com.networkcapture.module.data.repository.NetworkRequestRepository
-import de.robv.android.xposed.XposedBridge
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileWriter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * 抓包管理器
- * 用于 Hook 进程和主应用之间的通信
+ * 使用文件方式跨进程通信（最可靠）
+ * Hook进程写入JSON文件，模块UI进程读取
  */
 object CaptureManager {
 
-    private const val ACTION_NEW_REQUEST = "com.networkcapture.module.NEW_REQUEST"
-    private const val EXTRA_REQUEST_URL = "request_url"
-    private const val EXTRA_REQUEST_METHOD = "request_method"
-    private const val EXTRA_REQUEST_HEADERS = "request_headers"
-    private const val EXTRA_REQUEST_BODY = "request_body"
-    private const val EXTRA_RESPONSE_CODE = "response_code"
-    private const val EXTRA_RESPONSE_HEADERS = "response_headers"
-    private const val EXTRA_RESPONSE_BODY = "response_body"
-    private const val EXTRA_TIMESTAMP = "timestamp"
-    private const val EXTRA_DURATION = "duration"
-    private const val EXTRA_IS_SUCCESS = "is_success"
-    private const val EXTRA_ERROR_MESSAGE = "error_message"
+    private const val TAG = "NetworkCapture"
+    private const val CAPTURE_DIR = "network_capture_logs"
+    private val gson = Gson()
 
-    private var repository: NetworkRequestRepository? = null
-    private val scope = CoroutineScope(Dispatchers.IO)
+    private var appContext: Context? = null
 
     /**
-     * 初始化（在主应用中调用）
+     * 初始化（在Hook进程中调用）
      */
     fun init(context: Context) {
-        repository = NetworkRequestRepository.getRepository(context)
+        appContext = context
+        try {
+            val dir = getCaptureDir()
+            if (!dir.exists()) {
+                dir.mkdirs()
+            }
+            // 写入一个测试文件确认权限
+            val testFile = File(dir, "init_test.txt")
+            testFile.writeText("CaptureManager initialized at ${Date()}")
+            Log.d(TAG, "CaptureManager 初始化成功, 目录: ${dir.absolutePath}")
+        } catch (e: Exception) {
+            Log.e(TAG, "CaptureManager 初始化失败 - ${e.message}", e)
+        }
     }
 
     /**
-     * 保存网络请求（从 Hook 进程调用）
+     * 获取抓包数据目录
+     * 使用 /sdcard/Android/data/<target_pkg>/files/network_capture_logs/
+     */
+    private fun getCaptureDir(): File {
+        val ctx = appContext!!
+        val dir = File(ctx.getExternalFilesDir(null), CAPTURE_DIR)
+        if (!dir.exists()) {
+            dir.mkdirs()
+        }
+        return dir
+    }
+
+    /**
+     * 保存网络请求到文件
      */
     fun saveRequest(request: NetworkRequest) {
         try {
-            // 直接保存到数据库（如果是同一进程）
-            repository?.let { repo ->
-                scope.launch(Dispatchers.IO) {
-                    try {
-                        repo.insert(request)
-                        XposedBridge.log("NetworkCapture: 请求已保存 - ${request.method} ${request.url}")
-                    } catch (e: Exception) {
-                        XposedBridge.log("NetworkCapture: 保存请求失败 - ${e.message}")
-                    }
-                }
+            val ctx = appContext ?: run {
+                Log.e(TAG, "appContext 为 null")
+                return
+            }
+
+            val dir = getCaptureDir()
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.getDefault()).format(Date())
+            val fileName = "req_${timestamp}_${System.nanoTime()}.json"
+            val file = File(dir, fileName)
+
+            val json = gson.toJson(request)
+            FileWriter(file).use { it.write(json) }
+
+            // 同时写入日志文件
+            val logFile = File(dir, "capture_log.txt")
+            val logEntry = "[${Date()}] ${request.method} ${request.url} -> ${request.responseCode}\n"
+            FileWriter(logFile, true).use { it.append(logEntry) }
+
+            Log.d(TAG, "请求已保存到文件: ${file.name}")
+        } catch (e: Exception) {
+            Log.e(TAG, "保存请求失败 - ${e.message}", e)
+        }
+    }
+
+    /**
+     * 获取所有抓包文件（在模块UI进程中调用）
+     */
+    fun getCaptureFiles(targetPackage: String): List<File> {
+        return try {
+            val dir = File("/sdcard/Android/data/$targetPackage/files/$CAPTURE_DIR")
+            if (dir.exists() && dir.isDirectory) {
+                dir.listFiles { f -> f.name.startsWith("req_") && f.name.endsWith(".json") }
+                    ?.sortedByDescending { it.lastModified() }
+                    ?: emptyList()
+            } else {
+                emptyList()
             }
         } catch (e: Exception) {
-            XposedBridge.log("NetworkCapture: saveRequest 失败 - ${e.message}")
+            Log.e(TAG, "获取抓包文件失败 - ${e.message}", e)
+            emptyList()
         }
     }
 
     /**
-     * 从 Intent 解析网络请求
+     * 读取抓包文件内容
      */
-    fun parseRequestFromIntent(intent: Intent): NetworkRequest? {
-        try {
-            return NetworkRequest(
-                url = intent.getStringExtra(EXTRA_REQUEST_URL) ?: return null,
-                method = intent.getStringExtra(EXTRA_REQUEST_METHOD) ?: "GET",
-                requestHeaders = intent.getStringExtra(EXTRA_REQUEST_HEADERS),
-                requestBody = intent.getStringExtra(EXTRA_REQUEST_BODY),
-                responseCode = intent.getIntExtra(EXTRA_RESPONSE_CODE, 0),
-                responseHeaders = intent.getStringExtra(EXTRA_RESPONSE_HEADERS),
-                responseBody = intent.getStringExtra(EXTRA_RESPONSE_BODY),
-                timestamp = intent.getLongExtra(EXTRA_TIMESTAMP, System.currentTimeMillis()),
-                duration = intent.getLongExtra(EXTRA_DURATION, 0),
-                isSuccess = intent.getBooleanExtra(EXTRA_IS_SUCCESS, true),
-                errorMessage = intent.getStringExtra(EXTRA_ERROR_MESSAGE)
-            )
+    fun readCaptureFile(file: File): NetworkRequest? {
+        return try {
+            val json = file.readText()
+            gson.fromJson(json, NetworkRequest::class.java)
         } catch (e: Exception) {
-            XposedBridge.log("NetworkCapture: 解析 Intent 失败 - ${e.message}")
-            return null
+            Log.e(TAG, "读取文件失败 - ${e.message}", e)
+            null
         }
     }
 
     /**
-     * 创建网络请求 Intent
+     * 删除所有抓包文件
      */
-    fun createRequestIntent(request: NetworkRequest): Intent {
-        return Intent(ACTION_NEW_REQUEST).apply {
-            putExtra(EXTRA_REQUEST_URL, request.url)
-            putExtra(EXTRA_REQUEST_METHOD, request.method)
-            putExtra(EXTRA_REQUEST_HEADERS, request.requestHeaders)
-            putExtra(EXTRA_REQUEST_BODY, request.requestBody)
-            putExtra(EXTRA_RESPONSE_CODE, request.responseCode)
-            putExtra(EXTRA_RESPONSE_HEADERS, request.responseHeaders)
-            putExtra(EXTRA_RESPONSE_BODY, request.responseBody)
-            putExtra(EXTRA_TIMESTAMP, request.timestamp)
-            putExtra(EXTRA_DURATION, request.duration)
-            putExtra(EXTRA_IS_SUCCESS, request.isSuccess)
-            putExtra(EXTRA_ERROR_MESSAGE, request.errorMessage)
+    fun clearAllCaptures(targetPackage: String): Boolean {
+        return try {
+            val dir = File("/sdcard/Android/data/$targetPackage/files/$CAPTURE_DIR")
+            if (dir.exists()) {
+                dir.listFiles()?.forEach { it.delete() }
+            }
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "清除文件失败 - ${e.message}", e)
+            false
         }
     }
 }
