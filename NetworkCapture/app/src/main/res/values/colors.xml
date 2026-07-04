@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 主色调 - Code Dark -->
+    <color name="primary">#1E293B</color>
+    <color name="primary_dark">#0F172A</color>
+    <color name="primary_light">#334155</color>
+
+    <!-- 背景 -->
+    <color name="background">#0F172A</color>
+    <color name="surface">#1E293B</color>
+    <color name="surface_light">#334155</color>
+
+    <!-- 文字 -->
+    <color name="text_primary">#F8FAFC</color>
+    <color name="text_secondary">#CBD5E1</color>
+    <color name="text_muted">#94A3B8</color>
+
+    <!-- CTA - Run Green -->
+    <color name="accent">#22C55E</color>
+    <color name="accent_light">#4ADE80</color>
+    <color name="accent_dark">#16A34A</color>
+
+    <!-- 状态颜色 -->
+    <color name="success">#22C55E</color>
+    <color name="error">#EF4444</color>
+    <color name="warning">#F59E0B</color>
+    <color name="info">#3B82F6</color>
+
+    <!-- HTTP 方法颜色 -->
+    <color name="method_get">#22C55E</color>
+    <color name="method_post">#3B82F6</color>
+    <color name="method_put">#F59E0B</color>
+    <color name="method_delete">#EF4444</color>
+    <color name="method_patch">#8B5CF6</color>
+    <color name="method_head">#6366F1</color>
+    <color name="method_options">#EC4899</color>
+
+    <!-- 分隔线 -->
+    <color name="divider">#334155</color>
+
+    <!-- 卡片背景 -->
+    <color name="card_background">#1E293B</color>
+    <color name="card_background_pressed">#334155</color>
+</resources>

@@ -1,0 +1,54 @@
+<resources>
+    <string name="app_name">网络抓包</string>
+    <string name="detail_title">请求详情</string>
+
+    <!-- 主界面 -->
+    <string name="capture_enabled">抓包已开启</string>
+    <string name="capture_disabled">抓包已关闭</string>
+    <string name="no_logs">暂无网络请求记录</string>
+    <string name="start_capture_hint">开启抓包功能后将自动记录网络请求</string>
+
+    <!-- 过滤和搜索 -->
+    <string name="search_hint">搜索 URL、请求方法…</string>
+    <string name="filter_all">全部</string>
+    <string name="filter_get">GET</string>
+    <string name="filter_post">POST</string>
+    <string name="filter_put">PUT</string>
+    <string name="filter_delete">DELETE</string>
+
+    <!-- 详情页 -->
+    <string name="request_url">请求 URL</string>
+    <string name="request_method">请求方法</string>
+    <string name="request_headers">请求头</string>
+    <string name="request_body">请求体</string>
+    <string name="response_code">响应状态码</string>
+    <string name="response_headers">响应头</string>
+    <string name="response_body">响应体</string>
+    <string name="timestamp">时间戳</string>
+    <string name="duration">耗时</string>
+
+    <!-- 操作 -->
+    <string name="copy">复制</string>
+    <string name="export">导出</string>
+    <string name="clear">清空</string>
+    <string name="clear_confirm">确定要清空所有记录吗？</string>
+    <string name="cancel">取消</string>
+    <string name="confirm">确定</string>
+    <string name="copied_to_clipboard">已复制到剪贴板</string>
+    <string name="export_success">导出成功</string>
+    <string name="export_failed">导出失败</string>
+
+    <!-- 状态 -->
+    <string name="status_success">成功</string>
+    <string name="status_error">错误</string>
+    <string name="status_pending">请求中</string>
+
+    <!-- 空状态 -->
+    <string name="empty_body">(空)</string>
+    <string name="not_available">N/A</string>
+
+    <!-- LSPosed -->
+    <string name="module_not_activated">模块未激活，请在 LSPosed 中启用</string>
+    <string name="module_activated">模块已激活</string>
+    <string name="restart_target_app">请重启目标应用</string>
+</resources>
