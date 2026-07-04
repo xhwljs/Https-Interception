@@ -1,0 +1,70 @@
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+replay_pid*
+
+# Android related
+*.apk
+*.ap_
+*.aab
+*.dex
+
+# Android Studio
+build/
+.idea/
+*.iml
+*.ipr
+*.iws
+*.classpath
+*.project
+local.properties
+*.swp
+*.swo
+*~
+
+# Gradle
+.gradle/
+build/
+
+# Kotlin
+*.kotlin_module
+
+# lint
+lint-results.xml
+lint-results.html
+
+# Google Services (e.g. APIs or Firebase)
+google-services.json
+
+# Fabric/Crashlytics
+fabric.properties
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# OS files
+.DS_Store
+Thumbs.db
